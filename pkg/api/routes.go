@@ -32,6 +32,8 @@ func SetupRoutes(router *gin.Engine) {
 	// Routes that don't need database connection
 	api.POST("/connect", Connect)
 	api.GET("/bookmarks", GetBookmarks)
+	api.GET("/last_connection", GetLastConnection)
+	api.POST("/last_connection", SaveLastConnection)
 	api.GET("/ping", Ping)
 	api.GET("/history", GetHistory)
 	api.GET("/info", GetInfo)

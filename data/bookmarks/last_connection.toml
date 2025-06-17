@@ -1,0 +1,6 @@
+host = "localhost"
+port = 5432
+user = "postgres"
+database = "postgres"
+ssl_mode = "disable"
+last_used = 2024-12-17T19:50:00Z

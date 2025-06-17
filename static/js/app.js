@@ -131,6 +131,8 @@ function apiCall(method, path, params, cb) {
 function getInfo(cb)                        { apiCall("get", "/info", {}, cb); }
 function getHistory(cb)                     { apiCall("get", "/history", {}, cb); }
 function getBookmarks(cb)                   { apiCall("get", "/bookmarks", {}, cb); }
+function getLastConnection(cb)              { apiCall("get", "/last_connection", {}, cb); }
+function saveLastConnection(data, cb)       { apiCall("post", "/last_connection", data, cb); }
 function getConnection(cb)                  { apiCall("get", "/db/connection", {}, cb); }
 function getServerSettings(cb)              { apiCall("get", "/db/server_settings", {}, cb); }
 function getSchemas(cb)                     { apiCall("get", "/db/schemas", {}, cb); }
@@ -1143,7 +1145,7 @@ function getLatestReleaseInfo(current) {
   }
 }
 
-function showConnectionSettings() {
+function showConnectionSettings(loadLast) {
   // Show the current postgres version
   $(".connection-settings .version").text("v" + appInfo.version).show();
   $("#connection_window").show();
@@ -1152,36 +1154,65 @@ function showConnectionSettings() {
   // Check github release page for updates
   getLatestReleaseInfo(appInfo);
 
-  getBookmarks(function(data) {
+  // Load last connection configuration (only if requested)
+  if (loadLast !== false) {
+    loadLastConnection();
+  }
+  
+  // Hide bookmarks section since we're not using it
+  $(".bookmarks").hide();
+}
+
+function loadLastConnection() {
+  console.log("loadLastConnection() called");
+  getLastConnection(function(data) {
+    console.log("getLastConnection response:", data);
     if (data.error) {
-      console.log("Error while fetching bookmarks:", data.error);
+      console.log("Error while fetching last connection:", data.error);
       return;
     }
 
-    if (data.length > 0) {
-      // Set bookmarks in global var
-      bookmarks = data;
-
-      // Remove all existing bookmark options
-      $("#connection_bookmarks").html("");
-
-      // Add blank option
-      $("<option value=''>Select a bookmarked database to connect to</option>").appendTo("#connection_bookmarks");
-
-      // Add all available bookmarks
-      for (key of data) {
-        $("<option value='" + key + "''>" + key + "</option>").appendTo("#connection_bookmarks");
-      }
-
-      $(".bookmarks").show();
+    var lastConn = data.last_connection;
+    if (!lastConn) {
+      console.log("No last connection found");
+      return;
     }
-    else {
-      if (appFeatures.bookmarks_only) {
-        $("#connection_error").html("Running in <b>bookmarks-only</b> mode but <b>NO</b> bookmarks configured.").show();
-        $(".open-connection").hide();
-      } else {
-        $(".bookmarks").hide();
-      }
+
+    console.log("Loading last connection configuration:", lastConn);
+    console.log("Filling fields with:", {
+      host: lastConn.Host,
+      port: lastConn.Port,
+      user: lastConn.User,
+      database: lastConn.Database,
+      sslMode: lastConn.SSLMode
+    });
+
+    // Fill in connection details (note: Go returns capitalized field names)
+    $("#pg_host").val(lastConn.Host || "");
+    $("#pg_port").val(lastConn.Port || 5432);
+    $("#pg_user").val(lastConn.User || "");
+    $("#pg_db").val(lastConn.Database || "");
+    $("#connection_ssl").val(lastConn.SSLMode || "disable");
+
+    // If SSH info exists, fill it in and switch to SSH tab
+    if (lastConn.SSH) {
+      $("#ssh_host").val(lastConn.SSH.Host || "");
+      $("#ssh_port").val(lastConn.SSH.Port || "22");
+      $("#ssh_user").val(lastConn.SSH.User || "");
+      
+      // Switch to SSH connection mode
+      $(".connection-group-switch button").removeClass("active");
+      $("#connection_ssh").addClass("active");
+      $(".connection-scheme-group").hide();
+      $(".connection-standard-group").show();
+      $(".connection-ssh-group").show();
+    } else {
+      // Switch to standard connection mode
+      $(".connection-group-switch button").removeClass("active");
+      $("#connection_standard").addClass("active");
+      $(".connection-scheme-group").hide();
+      $(".connection-standard-group").show();
+      $(".connection-ssh-group").hide();
     }
   });
 }
@@ -1922,7 +1953,7 @@ $(document).ready(function() {
     getConnection(function(resp) {
       if (resp.error) {
         connected = false;
-        showConnectionSettings();
+        showConnectionSettings(true); // Pass true to load last connection
         $(".connection-actions").show();
         return;
       }

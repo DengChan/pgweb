@@ -68,7 +68,7 @@ function buildGoBackend() {
   
   try {
     // 构建Windows版本
-    const buildCmd = 'go build -ldflags "-s -w" -o dist/pgweb.exe main.go';
+    const buildCmd = 'CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -ldflags "-s -w" -o dist/pgweb.exe main.go';
     console.log('Executing:', buildCmd);
     execSync(buildCmd, { stdio: 'inherit' });
     

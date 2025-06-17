@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	neturl "net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -148,11 +150,13 @@ func Connect(c *gin.Context) {
 	}
 
 	var (
-		cl  *client.Client
-		err error
+		cl         *client.Client
+		err        error
+		bookmarkID string
 	)
 
-	if bookmarkID := c.Request.FormValue("bookmark_id"); bookmarkID != "" {
+	bookmarkID = c.Request.FormValue("bookmark_id")
+	if bookmarkID != "" {
 		cl, err = ConnectWithBookmark(bookmarkID)
 	} else if command.Opts.BookmarksOnly {
 		err = errNotPermitted
@@ -178,6 +182,11 @@ func Connect(c *gin.Context) {
 		cl.Close()
 		badRequest(c, err)
 		return
+	}
+
+	// Save last connection configuration (only for direct connections, not bookmarks)
+	if bookmarkID == "" {
+		saveLastConnection(c, cl)
 	}
 
 	successResponse(c, info.Format()[0])
@@ -734,4 +743,97 @@ func RunLocalQuery(c *gin.Context) {
 
 func Ping(c *gin.Context) {
 	successResponse(c, "pong")
+}
+
+// saveLastConnection saves the last used connection configuration
+func saveLastConnection(c *gin.Context, cl *client.Client) {
+	// Don't save if bookmarks directory is not configured
+	if command.Opts.BookmarksDir == "" {
+		return
+	}
+
+	connCtx, err := cl.GetConnContext()
+	if err != nil {
+		// Log error but don't fail the connection
+		fmt.Fprintf(os.Stderr, "[WARN] Failed to get connection context for saving last connection: %s\n", err)
+		return
+	}
+
+	manager := bookmarks.NewLastConnectionManager(command.Opts.BookmarksDir)
+
+	// Parse connection URL to get port
+	connURL, err := neturl.Parse(cl.ConnectionString)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] Failed to parse connection string: %s\n", err)
+		return
+	}
+
+	port := 5432 // Default PostgreSQL port
+	if connURL.Port() != "" {
+		if parsed, err := strconv.Atoi(connURL.Port()); err == nil {
+			port = parsed
+		}
+	}
+
+	// Get SSL mode from connection URL
+	sslMode := "disable"
+	if query := connURL.Query(); query.Get("sslmode") != "" {
+		sslMode = query.Get("sslmode")
+	}
+
+	lastConn := &bookmarks.LastConnection{
+		Host:     connCtx.Host,
+		Port:     port,
+		User:     connCtx.User,
+		Database: connCtx.Database,
+		SSLMode:  sslMode,
+	}
+
+	// If this connection used SSH, save SSH info
+	if c.Request.FormValue("ssh") != "" {
+		lastConn.SSH = parseSshInfo(c)
+	}
+
+	err = manager.Save(lastConn)
+	if err != nil {
+		// Log error but don't fail the connection
+		fmt.Fprintf(os.Stderr, "[WARN] Failed to save last connection: %s\n", err)
+	}
+}
+
+// GetLastConnection retrieves the last used connection configuration
+func GetLastConnection(c *gin.Context) {
+	manager := bookmarks.NewLastConnectionManager(command.Opts.BookmarksDir)
+
+	lastConn, err := manager.Load()
+	if err != nil {
+		badRequest(c, err)
+		return
+	}
+
+	if lastConn == nil {
+		successResponse(c, gin.H{"last_connection": nil})
+		return
+	}
+
+	successResponse(c, gin.H{"last_connection": lastConn})
+}
+
+// SaveLastConnection manually saves a connection configuration (for manual bookmarking)
+func SaveLastConnection(c *gin.Context) {
+	manager := bookmarks.NewLastConnectionManager(command.Opts.BookmarksDir)
+
+	var lastConn bookmarks.LastConnection
+	if err := c.ShouldBindJSON(&lastConn); err != nil {
+		badRequest(c, err)
+		return
+	}
+
+	err := manager.Save(&lastConn)
+	if err != nil {
+		badRequest(c, err)
+		return
+	}
+
+	successResponse(c, gin.H{"success": true})
 }

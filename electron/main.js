@@ -109,6 +109,7 @@ function startBackend() {
     backendProcess = spawn(backendPath, [
       '--bind', '127.0.0.1',
       '--listen', `${backendPort}`,
+      '--bookmarks-dir', './data/bookmarks',
       '--skip-open'
     ], {
       cwd: workingDir,
