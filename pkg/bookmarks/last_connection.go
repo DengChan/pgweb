@@ -12,13 +12,14 @@ import (
 
 // LastConnection represents the most recently used connection configuration
 type LastConnection struct {
-	Host     string          `toml:"host"`
-	Port     int             `toml:"port"`
-	User     string          `toml:"user"`
-	Database string          `toml:"database"`
-	SSLMode  string          `toml:"ssl_mode"`
-	SSH      *shared.SSHInfo `toml:"ssh,omitempty"`
-	LastUsed time.Time       `toml:"last_used"`
+	Host           string          `toml:"host"`
+	Port           int             `toml:"port"`
+	User           string          `toml:"user"`
+	Database       string          `toml:"database"`
+	SSLMode        string          `toml:"ssl_mode"`
+	DataSourceType string          `toml:"data_source_type"` // 新增：数据源类型
+	SSH            *shared.SSHInfo `toml:"ssh,omitempty"`
+	LastUsed       time.Time       `toml:"last_used"`
 }
 
 // LastConnectionManager manages the last used connection configuration
@@ -93,6 +94,11 @@ func (m *LastConnectionManager) Load() (*LastConnection, error) {
 	// Set default SSL mode if not provided
 	if conn.SSLMode == "" {
 		conn.SSLMode = "disable"
+	}
+
+	// Set default data source type if not provided
+	if conn.DataSourceType == "" {
+		conn.DataSourceType = "postgres"
 	}
 
 	return &conn, nil

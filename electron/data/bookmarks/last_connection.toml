@@ -3,4 +3,5 @@ port = 3023
 user = "oushu"
 database = "dbserver"
 ssl_mode = "disable"
-last_used = 2025-06-17T20:07:14.8824879+08:00
+data_source_type = "panweidb-ap"
+last_used = 2025-06-17T21:13:20.5043023+08:00

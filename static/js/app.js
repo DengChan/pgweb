@@ -1895,6 +1895,9 @@ $(document).ready(function() {
         return;
       }
 
+      // 添加数据源类型参数
+      params["data_source_type"] = $("#data_source_type").val();
+
       if ($(".connection-group-switch button.active").attr("data") == "ssh") {
         params["ssh"]              = 1
         params["ssh_host"]         = $("#ssh_host").val();

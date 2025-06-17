@@ -211,7 +211,19 @@ func ConnectWithURL(c *gin.Context) (*client.Client, error) {
 		sshInfo = parseSshInfo(c)
 	}
 
-	return client.NewFromUrl(url, sshInfo)
+	cl, err := client.NewFromUrl(url, sshInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	// 设置数据源类型
+	dataSourceType := c.Request.FormValue("data_source_type")
+	if dataSourceType == "" {
+		dataSourceType = "postgres" // 默认为PostgreSQL
+	}
+	cl.SetDataSourceType(dataSourceType)
+
+	return cl, nil
 }
 
 func ConnectWithBookmark(id string) (*client.Client, error) {
@@ -781,12 +793,19 @@ func saveLastConnection(c *gin.Context, cl *client.Client) {
 		sslMode = query.Get("sslmode")
 	}
 
+	// 获取数据源类型
+	dataSourceType := cl.GetDataSourceType()
+	if dataSourceType == "" {
+		dataSourceType = "postgres"
+	}
+
 	lastConn := &bookmarks.LastConnection{
-		Host:     connCtx.Host,
-		Port:     port,
-		User:     connCtx.User,
-		Database: connCtx.Database,
-		SSLMode:  sslMode,
+		Host:           connCtx.Host,
+		Port:           port,
+		User:           connCtx.User,
+		Database:       connCtx.Database,
+		SSLMode:        sslMode,
+		DataSourceType: dataSourceType,
 	}
 
 	// If this connection used SSH, save SSH info

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/sosedoff/pgweb/pkg/statements"
 )
 
 var (
@@ -26,7 +28,7 @@ var (
 
 // Get major and minor version components
 // Example: 10.2.3.1 -> 10.2
-func getMajorMinorVersion(str string) (major int, minor int) {
+func getPGMajorMinorVersion(str string) (major int, minor int) {
 	chunks := strings.Split(str, ".")
 	fmt.Sscanf(chunks[0], "%d", &major)
 	if len(chunks) > 1 {
@@ -37,9 +39,24 @@ func getMajorMinorVersion(str string) (major int, minor int) {
 
 // Get short version from the string
 // Example: 10.2.3.1 -> 10.2
-func getMajorMinorVersionString(str string) string {
-	major, minor := getMajorMinorVersion(str)
-	return fmt.Sprintf("%d.%d", major, minor)
+func getMajorMinorVersionString(c *Client) string {
+	switch c.dataSourceType {
+	case statements.DataSourcePostgreSQL:
+		major, minor := getPGMajorMinorVersion(c.serverVersion)
+		return fmt.Sprintf("%d.%d", major, minor)
+	case statements.DataSourcePanweiAP:
+		re := regexp.MustCompile(`OushuDB\s+(\d+\.\d+\.\d+\.\d+)`)
+		matches := re.FindStringSubmatch(c.serverVersion)
+		v := "6.0"
+		if len(matches) > 1 {
+			v = strings.Join(strings.Split(matches[1], ".")[:2], ".")
+		}
+		return v
+	case statements.DataSourcePanweiTP:
+		return "default"
+	default:
+		return "default"
+	}
 }
 
 func detectServerTypeAndVersion(version string) (bool, string, string) {
@@ -70,8 +87,8 @@ func detectDumpVersion(version string) (bool, string) {
 }
 
 func checkVersionRequirement(client, server string) bool {
-	clientMajor, clientMinor := getMajorMinorVersion(client)
-	serverMajor, serverMinor := getMajorMinorVersion(server)
+	clientMajor, clientMinor := getPGMajorMinorVersion(client)
+	serverMajor, serverMinor := getPGMajorMinorVersion(server)
 
 	if serverMajor < 10 {
 		return clientMajor >= serverMajor && clientMinor >= serverMinor

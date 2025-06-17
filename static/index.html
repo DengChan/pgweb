@@ -235,6 +235,17 @@
           </div>
 
           <div class="form-group">
+            <label class="col-sm-3 control-label">Data Source</label>
+            <div class="col-sm-9">
+              <select class="form-control" id="data_source_type">
+                <option value="postgres" selected="selected">PostgreSQL</option>
+                <option value="panweidb-ap">PanweiDB-AP</option>
+                <option value="panweidb-tp">PanweiDB-TP</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
             <label class="col-sm-3 control-label">SSL Mode</label>
             <div class="col-sm-9">
               <select class="form-control" id="connection_ssl">

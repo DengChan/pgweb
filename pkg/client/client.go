@@ -39,6 +39,8 @@ type Client struct {
 	tunnel           *Tunnel
 	serverVersion    string
 	serverType       string
+	dataSourceType   string                  // 新增：数据源类型
+	sqlProvider      *statements.SQLProvider // 新增：SQL提供器
 	lastQueryTime    time.Time
 	queryTimeout     time.Duration
 	readonly         bool
@@ -199,6 +201,42 @@ func (client *Client) setServerVersion() {
 		client.serverType = serverType
 		client.serverVersion = serverVersion
 	}
+
+	// 更新SQL提供器
+	client.updateSQLProvider()
+}
+
+// 更新SQL提供器
+func (client *Client) updateSQLProvider() {
+	if client.dataSourceType == "" {
+		client.dataSourceType = statements.DataSourcePostgreSQL // 默认为PostgreSQL
+	}
+
+	version := getMajorMinorVersionString(client)
+	if version == "" {
+		version = "default"
+	}
+
+	client.sqlProvider = statements.NewSQLProvider(client.dataSourceType, version)
+}
+
+// SetDataSourceType 设置数据源类型
+func (client *Client) SetDataSourceType(dataSourceType string) {
+	client.dataSourceType = dataSourceType
+	client.updateSQLProvider()
+}
+
+// GetDataSourceType 获取数据源类型
+func (client *Client) GetDataSourceType() string {
+	return client.dataSourceType
+}
+
+// GetSQLProvider 获取SQL提供器
+func (client *Client) GetSQLProvider() *statements.SQLProvider {
+	if client.sqlProvider == nil {
+		client.updateSQLProvider()
+	}
+	return client.sqlProvider
 }
 
 func (client *Client) Test() error {
@@ -253,40 +291,47 @@ func (client *Client) TestWithTimeout(timeout time.Duration) (result error) {
 }
 
 func (client *Client) Info() (*Result, error) {
-	result, err := client.query(statements.Info)
+	sqlProvider := client.GetSQLProvider()
+	result, err := client.query(sqlProvider.Info())
 	if err != nil {
 		msg := err.Error()
 		if strings.Contains(msg, "inet_") && (strings.Contains(msg, "not supported") || strings.Contains(msg, "permission denied")) {
 			// Fetch client information without inet_ function calls
-			result, err = client.query(statements.InfoSimple)
+			result, err = client.query(sqlProvider.InfoSimple())
 		}
 	}
 	return result, err
 }
 
 func (client *Client) Databases() ([]string, error) {
-	return client.fetchRows(statements.Databases)
+	sqlProvider := client.GetSQLProvider()
+	return client.fetchRows(sqlProvider.Databases())
 }
 
 func (client *Client) Schemas() ([]string, error) {
-	return client.fetchRows(statements.Schemas)
+	sqlProvider := client.GetSQLProvider()
+	return client.fetchRows(sqlProvider.Schemas())
 }
 
 func (client *Client) Objects() (*Result, error) {
-	return client.query(statements.Objects)
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.Objects())
 }
 
 func (client *Client) Table(table string) (*Result, error) {
 	schema, table := getSchemaAndTable(table)
-	return client.query(statements.TableSchema, schema, table)
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.TableSchema(), schema, table)
 }
 
 func (client *Client) MaterializedView(name string) (*Result, error) {
-	return client.query(statements.MaterializedView, name)
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.MaterializedView(), name)
 }
 
 func (client *Client) Function(id string) (*Result, error) {
-	return client.query(statements.Function, id)
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.Function(), id)
 }
 
 func (client *Client) TableRows(table string, opts RowsOptions) (*Result, error) {
@@ -318,7 +363,8 @@ func (client *Client) TableRows(table string, opts RowsOptions) (*Result, error)
 
 func (client *Client) EstimatedTableRowsCount(table string, opts RowsOptions) (*Result, error) {
 	schema, table := getSchemaAndTable(table)
-	result, err := client.query(statements.EstimatedTableRowCount, schema, table)
+	sqlProvider := client.GetSQLProvider()
+	result, err := client.query(sqlProvider.EstimatedTableRowCount(), schema, table)
 	if err != nil {
 		return nil, err
 	}
@@ -353,16 +399,18 @@ func (client *Client) TableRowsCount(table string, opts RowsOptions) (*Result, e
 }
 
 func (client *Client) TableInfo(table string) (*Result, error) {
+	sqlProvider := client.GetSQLProvider()
 	if client.serverType == cockroachType {
-		return client.query(statements.TableInfoCockroach)
+		return client.query(sqlProvider.TableInfoCockroach())
 	}
 	schema, table := getSchemaAndTable(table)
-	return client.query(statements.TableInfo, fmt.Sprintf(`"%s"."%s"`, schema, table))
+	return client.query(sqlProvider.TableInfo(), fmt.Sprintf(`"%s"."%s"`, schema, table))
 }
 
 func (client *Client) TableIndexes(table string) (*Result, error) {
 	schema, table := getSchemaAndTable(table)
-	res, err := client.query(statements.TableIndexes, schema, table)
+	sqlProvider := client.GetSQLProvider()
+	res, err := client.query(sqlProvider.TableIndexes(), schema, table)
 
 	if err != nil {
 		return nil, err
@@ -373,7 +421,8 @@ func (client *Client) TableIndexes(table string) (*Result, error) {
 
 func (client *Client) TableConstraints(table string) (*Result, error) {
 	schema, table := getSchemaAndTable(table)
-	res, err := client.query(statements.TableConstraints, schema, table)
+	sqlProvider := client.GetSQLProvider()
+	res, err := client.query(sqlProvider.TableConstraints(), schema, table)
 
 	if err != nil {
 		return nil, err
@@ -383,11 +432,13 @@ func (client *Client) TableConstraints(table string) (*Result, error) {
 }
 
 func (client *Client) TablesStats() (*Result, error) {
-	return client.query(statements.TablesStats)
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.TablesStats())
 }
 
 func (client *Client) ServerSettings() (*Result, error) {
-	return client.query(statements.Settings)
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.Settings())
 }
 
 // Returns all active queriers on the server
@@ -396,11 +447,8 @@ func (client *Client) Activity() (*Result, error) {
 		return client.query("SHOW QUERIES")
 	}
 
-	version := getMajorMinorVersionString(client.serverVersion)
-	query := statements.Activity[version]
-	if query == "" {
-		query = statements.Activity["default"]
-	}
+	version := getMajorMinorVersionString(client)
+	query := statements.GetActivitySQL(version)
 
 	return client.query(query)
 }

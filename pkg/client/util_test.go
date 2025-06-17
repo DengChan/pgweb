@@ -88,7 +88,7 @@ func TestGetMajorMinorVersion(t *testing.T) {
 
 	for _, ex := range examples {
 		t.Run(ex.input, func(t *testing.T) {
-			major, minor := getMajorMinorVersion(ex.input)
+			major, minor := getPGMajorMinorVersion(ex.input)
 			assert.Equal(t, ex.major, major)
 			assert.Equal(t, ex.minor, minor)
 		})
