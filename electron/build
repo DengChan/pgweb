@@ -1,0 +1,3 @@
+cd ..
+go build -o electron/go-backend/pgweb.exe main.go
+npm start

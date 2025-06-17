@@ -23,43 +23,52 @@ func SetupRoutes(router *gin.Engine) {
 	root.GET("/connect/:resource", ConnectWithBackend)
 
 	api := root.Group("/api")
-	SetupMiddlewares(api)
+
+	// CORS middleware for all API routes
+	if command.Opts.Cors {
+		api.Use(corsMiddleware())
+	}
+
+	// Routes that don't need database connection
+	api.POST("/connect", Connect)
+	api.GET("/bookmarks", GetBookmarks)
+	api.GET("/ping", Ping)
+	api.GET("/history", GetHistory)
+	api.GET("/info", GetInfo)
 
 	if command.Opts.Sessions {
 		api.GET("/sessions", GetSessions)
 	}
 
-	api.GET("/info", GetInfo)
-	api.POST("/connect", Connect)
-	api.POST("/disconnect", Disconnect)
-	api.POST("/switchdb", SwitchDb)
-	api.GET("/databases", GetDatabases)
-	api.GET("/connection", GetConnectionInfo)
-	api.GET("/server_settings", GetServerSettings)
-	api.GET("/activity", GetActivity)
-	api.GET("/schemas", GetSchemas)
-	api.GET("/objects", GetObjects)
-	api.GET("/tables/:table", GetTable)
-	api.GET("/tables/:table/rows", GetTableRows)
-	api.GET("/tables/:table/info", GetTableInfo)
-	api.GET("/tables/:table/indexes", GetTableIndexes)
-	api.GET("/tables/:table/constraints", GetTableConstraints)
-	api.GET("/tables_stats", GetTablesStats)
-	api.GET("/functions/:id", GetFunction)
-	api.GET("/query", RunQuery)
-	api.POST("/query", RunQuery)
-	api.GET("/explain", ExplainQuery)
-	api.POST("/explain", ExplainQuery)
-	api.GET("/analyze", AnalyzeQuery)
-	api.POST("/analyze", AnalyzeQuery)
-	api.GET("/history", GetHistory)
-	api.GET("/bookmarks", GetBookmarks)
-	api.GET("/export", DataExport)
-	api.GET("/local_queries", requireLocalQueries(), GetLocalQueries)
-	api.GET("/local_queries/:id", requireLocalQueries(), RunLocalQuery)
-	api.POST("/local_queries/:id", requireLocalQueries(), RunLocalQuery)
+	// Database-related routes with dbCheckMiddleware
+	dbApi := api.Group("/db")
+	dbApi.Use(dbCheckMiddleware())
 
-	api.GET("/ping", Ping)
+	dbApi.POST("/disconnect", Disconnect)
+	dbApi.POST("/switchdb", SwitchDb)
+	dbApi.GET("/databases", GetDatabases)
+	dbApi.GET("/connection", GetConnectionInfo)
+	dbApi.GET("/server_settings", GetServerSettings)
+	dbApi.GET("/activity", GetActivity)
+	dbApi.GET("/schemas", GetSchemas)
+	dbApi.GET("/objects", GetObjects)
+	dbApi.GET("/tables/:table", GetTable)
+	dbApi.GET("/tables/:table/rows", GetTableRows)
+	dbApi.GET("/tables/:table/info", GetTableInfo)
+	dbApi.GET("/tables/:table/indexes", GetTableIndexes)
+	dbApi.GET("/tables/:table/constraints", GetTableConstraints)
+	dbApi.GET("/tables_stats", GetTablesStats)
+	dbApi.GET("/functions/:id", GetFunction)
+	dbApi.GET("/query", RunQuery)
+	dbApi.POST("/query", RunQuery)
+	dbApi.GET("/explain", ExplainQuery)
+	dbApi.POST("/explain", ExplainQuery)
+	dbApi.GET("/analyze", AnalyzeQuery)
+	dbApi.POST("/analyze", AnalyzeQuery)
+	dbApi.GET("/export", DataExport)
+	dbApi.GET("/local_queries", requireLocalQueries(), GetLocalQueries)
+	dbApi.GET("/local_queries/:id", requireLocalQueries(), RunLocalQuery)
+	dbApi.POST("/local_queries/:id", requireLocalQueries(), RunLocalQuery)
 }
 
 func SetupMetrics(engine *gin.Engine) {

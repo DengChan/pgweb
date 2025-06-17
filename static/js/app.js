@@ -129,23 +129,23 @@ function apiCall(method, path, params, cb) {
 }
 
 function getInfo(cb)                        { apiCall("get", "/info", {}, cb); }
-function getConnection(cb)                  { apiCall("get", "/connection", {}, cb); }
-function getServerSettings(cb)              { apiCall("get", "/server_settings", {}, cb); }
-function getSchemas(cb)                     { apiCall("get", "/schemas", {}, cb); }
-function getObjects(cb)                     { apiCall("get", "/objects", {}, cb); }
-function getTables(cb)                      { apiCall("get", "/tables", {}, cb); }
-function getTableRows(table, opts, cb)      { apiCall("get", "/tables/" + table + "/rows", opts, cb); }
-function getTableStructure(table, opts, cb) { apiCall("get", "/tables/" + table, opts, cb); }
-function getTableIndexes(table, cb)         { apiCall("get", "/tables/" + table + "/indexes", {}, cb); }
-function getTableConstraints(table, cb)     { apiCall("get", "/tables/" + table + "/constraints", {}, cb); }
-function getTablesStats(cb)                 { apiCall("get", "/tables_stats", {}, cb); }
-function getFunction(id, cb)                { apiCall("get", "/functions/" + id, {}, cb); }
 function getHistory(cb)                     { apiCall("get", "/history", {}, cb); }
 function getBookmarks(cb)                   { apiCall("get", "/bookmarks", {}, cb); }
-function executeQuery(query, cb)            { apiCall("post", "/query", { query: query }, cb); }
-function explainQuery(query, cb)            { apiCall("post", "/explain", { query: query }, cb); }
-function analyzeQuery(query, cb)            { apiCall("post", "/analyze", { query: query }, cb); }
-function disconnect(cb)                     { apiCall("post", "/disconnect", {}, cb); }
+function getConnection(cb)                  { apiCall("get", "/db/connection", {}, cb); }
+function getServerSettings(cb)              { apiCall("get", "/db/server_settings", {}, cb); }
+function getSchemas(cb)                     { apiCall("get", "/db/schemas", {}, cb); }
+function getObjects(cb)                     { apiCall("get", "/db/objects", {}, cb); }
+function getTables(cb)                      { apiCall("get", "/db/tables", {}, cb); }
+function getTableRows(table, opts, cb)      { apiCall("get", "/db/tables/" + table + "/rows", opts, cb); }
+function getTableStructure(table, opts, cb) { apiCall("get", "/db/tables/" + table, opts, cb); }
+function getTableIndexes(table, cb)         { apiCall("get", "/db/tables/" + table + "/indexes", {}, cb); }
+function getTableConstraints(table, cb)     { apiCall("get", "/db/tables/" + table + "/constraints", {}, cb); }
+function getTablesStats(cb)                 { apiCall("get", "/db/tables_stats", {}, cb); }
+function getFunction(id, cb)                { apiCall("get", "/db/functions/" + id, {}, cb); }
+function executeQuery(query, cb)            { apiCall("post", "/db/query", { query: query }, cb); }
+function explainQuery(query, cb)            { apiCall("post", "/db/explain", { query: query }, cb); }
+function analyzeQuery(query, cb)            { apiCall("post", "/db/analyze", { query: query }, cb); }
+function disconnect(cb)                     { apiCall("post", "/db/disconnect", {}, cb); }
 
 function encodeQuery(query) {
   return Base64.encode(query).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, ".");
@@ -223,13 +223,13 @@ function loadLocalQueries() {
   $("body").on("click", "a.load-local-query", function(e) {
     var id = $(this).data("id");
 
-    apiCall("get", "/local_queries/" + id, {}, function(resp) {
+    apiCall("get", "/db/local_queries/" + id, {}, function(resp) {
       editor.setValue(resp.query);
       editor.clearSelection();
     });
   });
 
-  apiCall("get", "/local_queries", {}, function(resp) {
+  apiCall("get", "/db/local_queries", {}, function(resp) {
     if (resp.error) return;
 
     var container = $("#load-query-dropdown").find(".dropdown-menu");
@@ -364,10 +364,10 @@ function performTableAction(table, action, el) {
       var db = $("#current_database").text();
       var filename = db + "." + table + "." + format;
       var query = "SELECT * FROM " + table;
-      openInNewWindow("api/query", { "format": format, "filename": filename, "query": query });
+      openInNewWindow("api/db/query", { "format": format, "filename": filename, "query": query });
       break;
     case "dump":
-      openInNewWindow("api/export", { "table": table });
+      openInNewWindow("api/db/export", { "table": table });
       break;
     case "copy":
       copyToClipboard(table.split('.')[1]);
@@ -400,7 +400,7 @@ function performViewAction(view, action, el) {
       var db = $("#current_database").text();
       var filename = db + "." + view + "." + format;
       var query = "SELECT * FROM " + view;
-      openInNewWindow("api/query", { "format": format, "filename": filename, "query": query });
+      openInNewWindow("api/db/query", { "format": format, "filename": filename, "query": query });
       break;
     case "copy":
       copyToClipboard(view.split('.')[1]);
@@ -707,7 +707,7 @@ function showDatabaseStats() {
 }
 
 function downloadDatabaseStats() {
-  openInNewWindow("api/tables_stats", { format: "csv", export: "true" });
+  openInNewWindow("api/db/tables_stats", { format: "csv", export: "true" });
 }
 
 function showServerSettings() {
@@ -822,7 +822,7 @@ function showActivityPanel() {
   $("#input").hide();
   $("#body").addClass("full");
 
-  apiCall("get", "/activity", {}, function(data) {
+  apiCall("get", "/db/activity", {}, function(data) {
     buildTable(data, null, null, options);
   });
 }
@@ -1001,7 +1001,7 @@ function exportTo(format) {
 
   setCurrentTab("table_query");
 
-  openInNewWindow("api/query", {
+  openInNewWindow("api/db/query", {
     "format": format,
     "query": encodeQuery(query)
   })
@@ -1327,7 +1327,7 @@ function bindCurrentDatabaseMenu() {
           showServerSettings();
           break;
         case "export":
-          openInNewWindow("api/export");
+          openInNewWindow("api/db/export");
           break;
       }
     }

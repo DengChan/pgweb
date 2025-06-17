@@ -28,9 +28,10 @@ var (
 	// Paths that dont require database connection
 	allowedPaths = map[string]bool{
 		"/api/sessions":  true,
-		"/api/info":      true,
 		"/api/connect":   true,
 		"/api/bookmarks": true,
+		"/api/ping":      true,
+		"/api/info":      true,
 		"/api/history":   true,
 	}
 
