@@ -8,3 +8,5 @@ tmp/
 cover.out
 .vscode
 electron/node_modules
+node_modules
+dist

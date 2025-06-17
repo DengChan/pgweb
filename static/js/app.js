@@ -1,17 +1,12 @@
-// 从主进程获取配置
-let CONFIG;
-try {
-  CONFIG = window.electron.getConfig();
-} catch (error) {
-  console.error('Failed to get config from main process:', error);
-  // 提供默认配置作为后备
-  CONFIG = {
-    HOST: 'localhost',
-    PORT: 3000,
-    API_BASE_URL: 'http://localhost:3000',
-    LOCAL_HOSTS: ['localhost', '127.0.0.1']
-  };
-}
+// 本地配置
+const CONFIG = {
+  HOST: '127.0.0.1',
+  PORT: 3000,
+  get API_BASE_URL() {
+    return `http://${this.HOST}:${this.PORT}`;
+  },
+  LOCAL_HOSTS: ['127.0.0.1','localhost']
+};
 
 // 全局拦截所有 /api/ 请求，自动指向 API_BASE_URL/api/
 (function() {

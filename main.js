@@ -1,15 +1,6 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 
-// 全局配置 - 作为唯一配置源
-global.CONFIG = {
-  HOST: '127.0.0.1',
-  PORT: 3000,
-  get API_BASE_URL() {
-    return `http://${this.HOST}:${this.PORT}`;
-  }
-};
-
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
