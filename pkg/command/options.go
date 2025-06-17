@@ -40,7 +40,7 @@ type Options struct {
 	RetryDelay                   uint   `long:"open-retry-delay" description:"Number of seconds to wait before retrying the connection" default:"3"`
 	RetryCount                   uint   `long:"open-retry" description:"Number of times to retry establishing connection" default:"0"`
 	HTTPHost                     string `long:"bind" description:"HTTP server host" default:"localhost"`
-	HTTPPort                     uint   `long:"listen" description:"HTTP server listen port" default:"8081"`
+	HTTPPort                     uint   `long:"listen" description:"HTTP server listen port" default:"3000"`
 	AuthUser                     string `long:"auth-user" description:"HTTP basic auth user"`
 	AuthPass                     string `long:"auth-pass" description:"HTTP basic auth password"`
 	SkipOpen                     bool   `short:"s" long:"skip-open" description:"Skip browser open on start"`

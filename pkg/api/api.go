@@ -731,3 +731,7 @@ func RunLocalQuery(c *gin.Context) {
 
 	HandleQuery(statement, c)
 }
+
+func Ping(c *gin.Context) {
+	successResponse(c, "pong")
+}

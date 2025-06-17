@@ -1,3 +1,39 @@
+// 从主进程获取配置
+let CONFIG;
+try {
+  CONFIG = window.electron.getConfig();
+} catch (error) {
+  console.error('Failed to get config from main process:', error);
+  // 提供默认配置作为后备
+  CONFIG = {
+    HOST: 'localhost',
+    PORT: 3000,
+    API_BASE_URL: 'http://localhost:3000',
+    LOCAL_HOSTS: ['localhost', '127.0.0.1']
+  };
+}
+
+// 全局拦截所有 /api/ 请求，自动指向 API_BASE_URL/api/
+(function() {
+  var originAjax = window.XMLHttpRequest;
+  function wrapUrl(url) {
+    if (url.startsWith('/api/') || url.startsWith('api/')) {
+      return CONFIG.API_BASE_URL + '/' + url.replace(/^\/?api\//, 'api/');
+    }
+    return url;
+  }
+  function MyXHR() {
+    var xhr = new originAjax();
+    var open = xhr.open;
+    xhr.open = function(method, url) {
+      arguments[1] = wrapUrl(url);
+      return open.apply(this, arguments);
+    };
+    return xhr;
+  }
+  window.XMLHttpRequest = MyXHR;
+})();
+
 var appInfo             = {};
 var appFeatures         = {};
 var editor              = null;
@@ -1190,7 +1226,7 @@ function getConnectionString() {
     url = "postgres://" + user + ":" + pass + "@" + host + ":" + port + "/" + db + "?sslmode=" + ssl;
   }
   else {
-    var local = url.indexOf("localhost") != -1 || url.indexOf("127.0.0.1") != -1;
+    var local = isLocalHost(url);
 
     if (local && url.indexOf("sslmode") == -1) {
       url += "?sslmode=" + ssl;
@@ -1767,7 +1803,7 @@ $(document).ready(function() {
   });
 
   $("#connection_url").on("change", function() {
-    if ($(this).val().indexOf("localhost") != -1) {
+    if (isLocalHost($(this).val())) {
       $("#connection_ssl").val("disable");
     }
   });
@@ -1775,7 +1811,7 @@ $(document).ready(function() {
   $("#pg_host").on("change", function() {
     var value = $(this).val();
 
-    if (value.indexOf("localhost") != -1 || value.indexOf("127.0.0.1") != -1) {
+    if (isLocalHost(value)) {
       $("#connection_ssl").val("disable");
     }
   });
@@ -1909,4 +1945,9 @@ $(document).ready(function() {
     });
   });
 });
+
+// 修改检查本地主机的函数
+function isLocalHost(url) {
+  return CONFIG.LOCAL_HOSTS.some(host => url.indexOf(host) !== -1);
+}
 

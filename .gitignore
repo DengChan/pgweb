@@ -6,3 +6,5 @@ pgweb
 bin
 tmp/
 cover.out
+.vscode
+electron/node_modules

@@ -7,7 +7,7 @@ kill_timeout = 5
 
 [[services]]
   http_checks = []
-  internal_port = 8081
+  internal_port = 3000
   processes = ["web"]
   protocol = "tcp"
   script_checks = []
@@ -33,5 +33,5 @@ kill_timeout = 5
     timeout = "2s"
 
 [metrics]
-  port = 8081
+  port = 3000
   path = "/metrics"

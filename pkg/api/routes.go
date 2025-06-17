@@ -58,6 +58,8 @@ func SetupRoutes(router *gin.Engine) {
 	api.GET("/local_queries", requireLocalQueries(), GetLocalQueries)
 	api.GET("/local_queries/:id", requireLocalQueries(), RunLocalQuery)
 	api.POST("/local_queries/:id", requireLocalQueries(), RunLocalQuery)
+
+	api.GET("/ping", Ping)
 }
 
 func SetupMetrics(engine *gin.Engine) {

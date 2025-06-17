@@ -33,7 +33,7 @@ load_rc_config $name
 : ${pgweb_flags=""}
 : ${pgweb_facility:="daemon"}
 : ${pgweb_priority:="debug"}
-: ${pgweb_listen:="8081"}
+: ${pgweb_listen:="3000"}
 
 procname="/usr/local/bin/${name}"
 pidfile="/var/run/${name}.pid"

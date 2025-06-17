@@ -1,0 +1,12 @@
+{
+  "name": "pgweb-electron",
+  "version": "1.0.0",
+  "description": "Pgweb Electron Desktop Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+} 
