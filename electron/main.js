@@ -3,6 +3,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const fs = require('fs');
 const http = require('http');
+const os = require('os');
 
 let backendProcess;
 let backendPort = 3000;
@@ -16,7 +17,6 @@ function waitForBackend(port, maxAttempts = 30) {
       let backendPingUrl =  `http://127.0.0.1:${port}/api/ping`
       attempts++;
       console.log(`Checking backend [ ${backendPingUrl} ] readiness... (${attempts}/${maxAttempts})`);
-      
       
       const req = http.get(backendPingUrl, (res) => {
         console.log('Backend ping ',backendPingUrl, 'is ready!');
@@ -50,21 +50,56 @@ function waitForBackend(port, maxAttempts = 30) {
 
 function startBackend() {
   return new Promise((resolve, reject) => {
-    const logsDir = path.join(__dirname, 'logs');
-    if (!fs.existsSync(logsDir)) {
-      fs.mkdirSync(logsDir);
+    // 根据是否打包选择不同的后端路径和日志目录
+    let backendPath;
+    let logsDir;
+    let workingDir;
+    const isDev = !app.isPackaged;
+    
+    if (isDev) {
+      // 开发环境：从go-backend目录
+      backendPath = process.platform === 'win32'
+        ? path.join(__dirname, 'go-backend', 'pgweb.exe')
+        : path.join(__dirname, 'go-backend', 'pgweb');
+      logsDir = path.join(__dirname, 'logs');
+      workingDir = __dirname;
+    } else {
+      // 打包环境：从resources目录
+      backendPath = process.platform === 'win32'
+        ? path.join(process.resourcesPath, 'pgweb.exe')
+        : path.join(process.resourcesPath, 'pgweb');
+      
+      // 使用用户目录作为日志目录，避免权限问题
+      const userDataPath = app.getPath('userData');
+      logsDir = path.join(userDataPath, 'logs');
+      workingDir = userDataPath;
     }
     
-    const backendPath = process.platform === 'win32'
-      ? path.join(__dirname, 'go-backend', 'pgweb.exe')
-      : path.join(__dirname, 'go-backend', 'pgweb');
-    
+    console.log('Environment:', isDev ? 'development' : 'production');
     console.log('Backend binary path:', backendPath);
+    console.log('Logs directory:', logsDir);
+    console.log('Working directory:', workingDir);
+    console.log('Resources path:', process.resourcesPath);
+    console.log('User data path:', app.getPath('userData'));
+    
+    // 创建日志目录
+    try {
+      if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+        console.log('Created logs directory:', logsDir);
+      }
+    } catch (error) {
+      console.warn('Warning: Could not create logs directory:', error.message);
+      // 不要因为日志目录创建失败而终止，继续执行
+    }
     
     if (!fs.existsSync(backendPath)) {
-      console.error('Backend binary not found at:', backendPath);
-      console.error('Please compile the backend first:');
-      console.error('go build -o electron/go-backend/pgweb.exe main.go');
+      const errorMsg = `Backend binary not found at: ${backendPath}`;
+      console.error(errorMsg);
+      if (isDev) {
+        console.error('Please compile the backend first:');
+        console.error('go build -o electron/go-backend/pgweb.exe main.go');
+      }
       reject(new Error('Backend binary not found'));
       return;
     }
@@ -72,19 +107,21 @@ function startBackend() {
     console.log(`Starting backend on port ${backendPort}...`);
     
     backendProcess = spawn(backendPath, [
-      '--bind=127.0.0.1',
-      `--port=${backendPort}`
+      '--bind', '127.0.0.1',
+      '--listen', `${backendPort}`,
+      '--skip-open'
     ], {
-      cwd: __dirname,
-      detached: false
+      cwd: workingDir,
+      detached: false,
+      stdio: ['ignore', 'pipe', 'pipe']
     });
     
     backendProcess.stdout.on('data', data => {
-      console.log(`Backend stdout: ${data}`);
+      console.log(`Backend stdout: ${data.toString().trim()}`);
     });
     
     backendProcess.stderr.on('data', data => {
-      console.error(`Backend stderr: ${data}`);
+      console.error(`Backend stderr: ${data.toString().trim()}`);
     });
     
     backendProcess.on('close', code => {
@@ -108,7 +145,7 @@ function startBackend() {
       } catch (err) {
         reject(err);
       }
-    }, 2000); // 给后端进程 2 秒启动时间
+    }, 2000);
   });
 }
 
@@ -116,6 +153,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    show: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -124,16 +162,29 @@ function createWindow() {
       allowRunningInsecureContent: true
     }
   });
-  win.webContents.openDevTools();
-  win.loadFile(path.join(__dirname, '..', 'static', 'index.html'));
+  
+  // 只在开发环境打开开发者工具
+  if (!app.isPackaged) {
+    win.webContents.openDevTools();
+  }
+  
+  // 加载主页面
+  const indexPath = path.join(__dirname, '..', 'static', 'index.html');
+  console.log('Loading index.html from:', indexPath);
+  win.loadFile(indexPath);
+  
+  // 确保窗口显示在前面
+  win.focus();
+  win.show();
 }
 
 app.whenReady().then(async () => {
   try {
-    console.log('Starting backend service...');
+    console.log('App is ready, starting backend service...');
     await startBackend();
     console.log('Backend is ready, creating window...');
     createWindow();
+    console.log('Application started successfully!');
   } catch (err) {
     console.error('Failed to start application:', err);
     app.quit();
@@ -145,5 +196,13 @@ app.on('window-all-closed', () => {
     console.log('Killing backend process...');
     backendProcess.kill();
   }
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 }); 

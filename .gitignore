@@ -10,3 +10,6 @@ cover.out
 electron/node_modules
 node_modules
 dist
+electron/go-backend
+electron/logs
+*/*.exe
