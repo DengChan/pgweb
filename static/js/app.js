@@ -593,7 +593,7 @@ function showTableInfo() {
     return;
   }
 
-  apiCall("get", "/tables/" + name + "/info", {}, function(data) {
+  apiCall("get", "/db/tables/" + name + "/info", {}, function(data) {
     $(".table-information .lines").show();
     $("#table_total_size").text(data.total_size);
     $("#table_data_size").text(data.data_size);
@@ -1822,7 +1822,7 @@ $(document).ready(function() {
   });
 
   $("#current_database").on("click", function(e) {
-    apiCall("get", "/databases", {}, function(resp) {
+    apiCall("get", "/db/databases", {}, function(resp) {
       toggleDatabaseSearch();
       enableDatabaseSearch(resp);
     });
@@ -1831,7 +1831,7 @@ $(document).ready(function() {
   $("#database_search").change(function(e) {
     var current = $("#database_search").typeahead("getActive");
     if (current && current == $("#database_search").val()) {
-      apiCall("post", "/switchdb", { db: current }, function(resp) {
+      apiCall("post", "/db/switchdb", { db: current }, function(resp) {
         if (resp.error) {
           alert(resp.error);
           return;

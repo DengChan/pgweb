@@ -260,6 +260,7 @@ func SwitchDb(c *gin.Context) {
 		badRequest(c, errNotConnected)
 		return
 	}
+	dataSourceType := conn.GetDataSourceType()
 
 	// Do not allow switching databases for connections from third-party backends
 	if conn.External {
@@ -279,6 +280,7 @@ func SwitchDb(c *gin.Context) {
 		badRequest(c, err)
 		return
 	}
+	cl.SetDataSourceType(dataSourceType)
 
 	err = cl.Test()
 	if err != nil {
