@@ -69,18 +69,18 @@ function startBackend() {
         ? path.join(process.resourcesPath, 'pgweb.exe')
         : path.join(process.resourcesPath, 'pgweb');
       
-      // 使用用户目录作为日志目录，避免权限问题
-      const userDataPath = app.getPath('userData');
-      logsDir = path.join(userDataPath, 'logs');
-      workingDir = userDataPath;
+      // 获取应用安装目录 (exe文件所在目录)
+      const appDir = path.dirname(process.execPath);
+      workingDir = appDir;
+      logsDir = path.join(appDir, 'logs');
     }
     
     console.log('Environment:', isDev ? 'development' : 'production');
     console.log('Backend binary path:', backendPath);
     console.log('Logs directory:', logsDir);
     console.log('Working directory:', workingDir);
+    console.log('App executable path:', process.execPath);
     console.log('Resources path:', process.resourcesPath);
-    console.log('User data path:', app.getPath('userData'));
     
     // 创建日志目录
     try {
@@ -88,9 +88,28 @@ function startBackend() {
         fs.mkdirSync(logsDir, { recursive: true });
         console.log('Created logs directory:', logsDir);
       }
+      // 测试写入权限
+      const testFile = path.join(logsDir, 'test-write-permission.tmp');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      console.log('Write permission confirmed for logs directory');
     } catch (error) {
-      console.warn('Warning: Could not create logs directory:', error.message);
-      // 不要因为日志目录创建失败而终止，继续执行
+      console.warn('Warning: No write permission for install directory:', error.message);
+      console.log('Falling back to user data directory...');
+      
+      // 如果安装目录没有写入权限，回退到用户数据目录
+      const userDataPath = app.getPath('userData');
+      workingDir = userDataPath;
+      logsDir = path.join(userDataPath, 'logs');
+      
+      try {
+        if (!fs.existsSync(logsDir)) {
+          fs.mkdirSync(logsDir, { recursive: true });
+          console.log('Created fallback logs directory:', logsDir);
+        }
+      } catch (fallbackError) {
+        console.error('Failed to create fallback logs directory:', fallbackError.message);
+      }
     }
     
     if (!fs.existsSync(backendPath)) {
