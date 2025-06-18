@@ -13,3 +13,4 @@ dist
 electron/go-backend
 electron/logs
 */*.exe
+data

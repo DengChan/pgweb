@@ -446,10 +446,8 @@ func (client *Client) Activity() (*Result, error) {
 	if client.serverType == cockroachType {
 		return client.query("SHOW QUERIES")
 	}
-
-	version := getMajorMinorVersionString(client)
-	query := statements.GetActivitySQL(version)
-
+	sqlProvider := client.GetSQLProvider()
+	query := sqlProvider.Activity()
 	return client.query(query)
 }
 

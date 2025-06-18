@@ -51,6 +51,9 @@ var (
 	//go:embed panwei-ap/settings.sql
 	panweidbAPSettingsDefault string
 
+	//go:embed panwei-ap/activity.sql
+	panweidbAPActivityDefault string
+
 	// PostgreSQL版本化SQL映射
 	panweidbAPSQLMap = map[string]map[string]string{
 		"default": {
@@ -69,6 +72,7 @@ var (
 			"tables_stats":         panweidbAPTablesStatsDefault,
 			"function":             panweidbAPFunctionDefault,
 			"settings":             panweidbAPSettingsDefault,
+			"activity":             panweidbAPActivityDefault,
 		},
 	}
 )

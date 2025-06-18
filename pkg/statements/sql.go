@@ -56,10 +56,11 @@ func (p *SQLProvider) getSQL(queryType string) string {
 		versionMap = dataSourceMap["default"]
 	}
 
-	// 获取查询类型对应的SQL
+	// 获取该版本查询类型对应的SQL 不存在则回退到默认版本
 	sql, exists := versionMap[queryType]
 	if !exists {
-		return ""
+		versionMap = dataSourceMap["default"]
+		sql = versionMap[queryType]
 	}
 
 	return sql
@@ -140,12 +141,9 @@ func (p *SQLProvider) Settings() string {
 	return p.getSQL("settings")
 }
 
-// GetActivitySQL 获取Activity查询SQL（保持向后兼容）
-func GetActivitySQL(version string) string {
-	if sql, exists := Activity[version]; exists {
-		return sql
-	}
-	return Activity["default"]
+// Settings 获取Activity查询SQL（保持向后兼容）
+func (p *SQLProvider) Activity() string {
+	return p.getSQL("activity")
 }
 
 // 向后兼容的全局变量和函数，保持现有代码不受影响
