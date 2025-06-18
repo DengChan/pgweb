@@ -143,6 +143,7 @@ function getTableStructure(table, opts, cb) { apiCall("get", "/db/tables/" + tab
 function getTableIndexes(table, cb)         { apiCall("get", "/db/tables/" + table + "/indexes", {}, cb); }
 function getTableConstraints(table, cb)     { apiCall("get", "/db/tables/" + table + "/constraints", {}, cb); }
 function getTablesStats(cb)                 { apiCall("get", "/db/tables_stats", {}, cb); }
+function getTableBasicInfo(oid, cb)         { apiCall("get", "/db/table_basic_info/" + oid, {}, cb); }
 function getFunction(id, cb)                { apiCall("get", "/db/functions/" + id, {}, cb); }
 function executeQuery(query, cb)            { apiCall("post", "/db/query", { query: query }, cb); }
 function explainQuery(query, cb)            { apiCall("post", "/db/explain", { query: query }, cb); }
@@ -208,7 +209,7 @@ function buildSchemaSection(name, objects) {
           id = item.oid;
         }
 
-        section += "<li class='schema-item schema-" + group + "' data-type='" + group + "' data-id='" + id + "' data-name='" + item.name + "'>" + icons[group] + "&nbsp;" + item.name + "</li>";
+        section += "<li class='schema-item schema-" + group + "' data-type='" + group + "' data-id='" + id + "' data-name='" + item.name + "' data-oid='" + item.oid + "'>" + icons[group] + "&nbsp;" + item.name + "</li>";
       });
       section += "</ul></div>";
     }
@@ -1691,6 +1692,25 @@ $(document).ready(function() {
     $(this).addClass("active");
     $(".current-page").data("page", 1);
     $(".filters select, .filters input").val("");
+
+    // 测试调用TableBasicInfo API（仅对表类型）
+    if (currentObject.type == "table") {
+      var oid = $(this).data("oid");
+      if (oid) {
+        console.log("Calling TableBasicInfo API for table:", currentObject.name, "OID:", oid);
+        getTableBasicInfo(oid, function(data) {
+          if (data.error) {
+            console.error("TableBasicInfo API Error:", data.error);
+            alert("Error calling TableBasicInfo API: " + data.error);
+          } else {
+            console.log("TableBasicInfo API Response:", data);
+            alert("TableBasicInfo API called successfully! Check console for details.\n\nTable: " + data.name + "\nType: " + data.table_type + "\nOwner: " + data.owner);
+          }
+        });
+      } else {
+        console.warn("No OID found for table:", currentObject.name);
+      }
+    }
 
     if (currentObject.type == "function") {
       sessionStorage.setItem("tab", "table_structure");

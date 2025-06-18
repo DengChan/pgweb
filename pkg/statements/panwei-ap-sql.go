@@ -27,7 +27,7 @@ var (
 	//go:embed panwei-ap/table_constraints.sql
 	panweidbAPTableConstraintsDefault string
 
-	//go:embed panwei-ap/table_info.sql
+	//go:embed panwei-ap/table_stat_info.sql
 	panweidbAPTableInfoDefault string
 
 	//go:embed panwei-ap/table_info_cockroach.sql
@@ -45,6 +45,15 @@ var (
 	//go:embed panwei-ap/tables_stats.sql
 	panweidbAPTablesStatsDefault string
 
+	//go:embed panwei-ap/table_partition_keys.sql
+	panweidbAPTablePartitionKeysDefault string
+
+	//go:embed panwei-ap/table_distribute_keys.sql
+	panweidbAPTableDistributeKeysDefault string
+
+	//go:embed panwei-ap/table_basic_info.sql
+	panweidbAPTableBasicInfoDefault string
+
 	//go:embed panwei-ap/function.sql
 	panweidbAPFunctionDefault string
 
@@ -57,22 +66,25 @@ var (
 	// PostgreSQL版本化SQL映射
 	panweidbAPSQLMap = map[string]map[string]string{
 		"default": {
-			"databases":            panweidbAPDatabasesDefault,
-			"schemas":              panweidbAPSchemasDefault,
-			"info":                 panweidbAPInfoDefault,
-			"info_simple":          panweidbAPInfoSimpleDefault,
-			"estimated_row_count":  panweidbAPEstimatedTableRowCountDefault,
-			"table_indexes":        panweidbAPTableIndexesDefault,
-			"table_constraints":    panweidbAPTableConstraintsDefault,
-			"table_info":           panweidbAPTableInfoDefault,
-			"table_info_cockroach": panweidbAPTableInfoCockroachDefault,
-			"table_schema":         panweidbAPTableSchemaDefault,
-			"materialized_view":    panweidbAPMaterializedViewDefault,
-			"objects":              panweidbAPObjectsDefault,
-			"tables_stats":         panweidbAPTablesStatsDefault,
-			"function":             panweidbAPFunctionDefault,
-			"settings":             panweidbAPSettingsDefault,
-			"activity":             panweidbAPActivityDefault,
+			"databases":             panweidbAPDatabasesDefault,
+			"schemas":               panweidbAPSchemasDefault,
+			"info":                  panweidbAPInfoDefault,
+			"info_simple":           panweidbAPInfoSimpleDefault,
+			"estimated_row_count":   panweidbAPEstimatedTableRowCountDefault,
+			"table_indexes":         panweidbAPTableIndexesDefault,
+			"table_constraints":     panweidbAPTableConstraintsDefault,
+			"table_stat_info":       panweidbAPTableInfoDefault,
+			"table_info_cockroach":  panweidbAPTableInfoCockroachDefault,
+			"table_schema":          panweidbAPTableSchemaDefault,
+			"materialized_view":     panweidbAPMaterializedViewDefault,
+			"objects":               panweidbAPObjectsDefault,
+			"tables_stats":          panweidbAPTablesStatsDefault,
+			"function":              panweidbAPFunctionDefault,
+			"settings":              panweidbAPSettingsDefault,
+			"activity":              panweidbAPActivityDefault,
+			"table_partition_keys":  panweidbAPTablePartitionKeysDefault,
+			"table_distribute_keys": panweidbAPTableDistributeKeysDefault,
+			"table_basic_info":      panweidbAPTableBasicInfoDefault,
 		},
 	}
 )

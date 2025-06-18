@@ -415,7 +415,7 @@ func testTableRows(t *testing.T) {
 }
 
 func testTableInfo(t *testing.T) {
-	res, err := testClient.TableInfo("books")
+	res, err := testClient.TableStatInfo("books")
 	assert.NoError(t, err)
 	assert.Equal(t, 4, len(res.Columns))
 	assert.Equal(t, 1, len(res.Rows))
@@ -467,7 +467,7 @@ func testTableNameWithCamelCase(t *testing.T) {
 	_, err := testClient.Table("exampleTable")
 	assert.NoError(t, err)
 
-	_, err = testClient.TableInfo("exampleTable")
+	_, err = testClient.TableStatInfo("exampleTable")
 	assert.NoError(t, err)
 
 	_, err = testClient.TableConstraints("exampleTable")

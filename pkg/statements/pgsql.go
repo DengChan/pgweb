@@ -27,7 +27,7 @@ var (
 	//go:embed sql/table_constraints.sql
 	postgresqlTableConstraintsDefault string
 
-	//go:embed sql/table_info.sql
+	//go:embed sql/table_stat_info.sql
 	postgresqlTableInfoDefault string
 
 	//go:embed sql/table_info_cockroach.sql
@@ -35,6 +35,12 @@ var (
 
 	//go:embed sql/table_schema.sql
 	postgresqlTableSchemaDefault string
+
+	//go:embed sql/table_partition_keys.sql
+	postgresqlTablePartitionKeysDefault string
+
+	//go:embed sql/table_basic_info.sql
+	postgresqlTableBasicInfoDefault string
 
 	//go:embed sql/materialized_view.sql
 	postgresqlMaterializedViewDefault string
@@ -69,7 +75,7 @@ var (
 			"estimated_row_count":  postgresqlEstimatedTableRowCountDefault,
 			"table_indexes":        postgresqlTableIndexesDefault,
 			"table_constraints":    postgresqlTableConstraintsDefault,
-			"table_info":           postgresqlTableInfoDefault,
+			"table_stat_info":      postgresqlTableInfoDefault,
 			"table_info_cockroach": postgresqlTableInfoCockroachDefault,
 			"table_schema":         postgresqlTableSchemaDefault,
 			"materialized_view":    postgresqlMaterializedViewDefault,
@@ -78,6 +84,8 @@ var (
 			"function":             postgresqlFunctionDefault,
 			"settings":             postgresqlSettingsDefault,
 			"activity":             postgresqlActivityDefault,
+			"table_partition_keys": postgresqlTablePartitionKeysDefault,
+			"table_basic_info":     postgresqlTableBasicInfoDefault,
 		},
 		"9.1": {
 			"activity": postgresqlActivity91,

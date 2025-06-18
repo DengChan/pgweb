@@ -101,9 +101,9 @@ func (p *SQLProvider) TableConstraints() string {
 	return p.getSQL("table_constraints")
 }
 
-// TableInfo 获取表信息的SQL
-func (p *SQLProvider) TableInfo() string {
-	return p.getSQL("table_info")
+// TableStatInfo 获取表信息的SQL
+func (p *SQLProvider) TableStatInfo() string {
+	return p.getSQL("table_stat_info")
 }
 
 // TableInfoCockroach 获取CockroachDB表信息的SQL
@@ -131,6 +131,16 @@ func (p *SQLProvider) TablesStats() string {
 	return p.getSQL("tables_stats")
 }
 
+// TablesPartitionKeys 获取表的分区键
+func (p *SQLProvider) TablePartitionKeys() string {
+	return p.getSQL("table_partition_keys")
+}
+
+// TableBasicInfo 获取表基本信息的SQL
+func (p *SQLProvider) TableBasicInfo() string {
+	return p.getSQL("table_basic_info")
+}
+
 // Function 获取函数信息的SQL
 func (p *SQLProvider) Function() string {
 	return p.getSQL("function")
@@ -144,6 +154,33 @@ func (p *SQLProvider) Settings() string {
 // Settings 获取Activity查询SQL（保持向后兼容）
 func (p *SQLProvider) Activity() string {
 	return p.getSQL("activity")
+}
+
+func (p *SQLProvider) SqlMap() map[string]string {
+	// 获取数据源的SQL映射
+	dataSourceMap, exists := dataSourceSQLMap[p.DataSourceType]
+	if !exists {
+		// 如果数据源不存在，回退到PostgreSQL
+		dataSourceMap = dataSourceSQLMap[DataSourcePostgreSQL]
+	}
+
+	// 获取版本特定的SQL映射
+	versionMap, exists := dataSourceMap[p.Version]
+	if !exists {
+		// 如果版本不存在，回退到默认版本
+		versionMap = dataSourceMap["default"]
+	}
+	return versionMap
+}
+
+func (p *SQLProvider) DefaultVersionSqlMap() map[string]string {
+	// 获取数据源的SQL映射
+	dataSourceMap, exists := dataSourceSQLMap[p.DataSourceType]
+	if !exists {
+		// 如果数据源不存在，回退到PostgreSQL
+		dataSourceMap = dataSourceSQLMap[DataSourcePostgreSQL]
+	}
+	return dataSourceMap["default"]
 }
 
 // 向后兼容的全局变量和函数，保持现有代码不受影响

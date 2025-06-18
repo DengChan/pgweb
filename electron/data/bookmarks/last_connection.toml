@@ -1,7 +1,0 @@
-host = "192.144.142.141"
-port = 3024
-user = "oushutest_u_100000001002"
-database = "postgres"
-ssl_mode = "disable"
-data_source_type = "panweidb-ap"
-last_used = 2025-06-18T16:12:47.6075648+08:00

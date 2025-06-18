@@ -20,6 +20,7 @@ import (
 	"github.com/sosedoff/pgweb/pkg/history"
 	"github.com/sosedoff/pgweb/pkg/shared"
 	"github.com/sosedoff/pgweb/pkg/statements"
+	"github.com/sosedoff/pgweb/pkg/structs/meta"
 )
 
 var (
@@ -239,6 +240,31 @@ func (client *Client) GetSQLProvider() *statements.SQLProvider {
 	return client.sqlProvider
 }
 
+// GetDB 获取数据库连接
+func (client *Client) GetDB() *sqlx.DB {
+	return client.db
+}
+
+// TableBasicInfo 根据OID获取表基本信息
+func (client *Client) TableBasicInfo(oid int) (*meta.TableBasicInfo, error) {
+	// 创建DBMetaQueryer实例
+	dataSourceType := client.GetDataSourceType()
+	version := client.ServerVersion()
+	if version == "" {
+		version = "default"
+	}
+
+	metaQueryer := NewDBMetaQueryer(dataSourceType, version)
+
+	// 调用TableBasicInfo方法
+	basicInfo, err := metaQueryer.TableBasicInfo(client.db, oid)
+	if err != nil {
+		return nil, err
+	}
+
+	return &basicInfo, nil
+}
+
 func (client *Client) Test() error {
 	// NOTE: This is a different timeout defined in CLI OpenTimeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -398,13 +424,13 @@ func (client *Client) TableRowsCount(table string, opts RowsOptions) (*Result, e
 	return client.query(sql)
 }
 
-func (client *Client) TableInfo(table string) (*Result, error) {
+func (client *Client) TableStatInfo(table string) (*Result, error) {
 	sqlProvider := client.GetSQLProvider()
 	if client.serverType == cockroachType {
 		return client.query(sqlProvider.TableInfoCockroach())
 	}
 	schema, table := getSchemaAndTable(table)
-	return client.query(sqlProvider.TableInfo(), fmt.Sprintf(`"%s"."%s"`, schema, table))
+	return client.query(sqlProvider.TableStatInfo(), fmt.Sprintf(`"%s"."%s"`, schema, table))
 }
 
 func (client *Client) TableIndexes(table string) (*Result, error) {
@@ -434,6 +460,11 @@ func (client *Client) TableConstraints(table string) (*Result, error) {
 func (client *Client) TablesStats() (*Result, error) {
 	sqlProvider := client.GetSQLProvider()
 	return client.query(sqlProvider.TablesStats())
+}
+
+func (client *Client) TablePartitionKeys(table string) (*Result, error) {
+	sqlProvider := client.GetSQLProvider()
+	return client.query(sqlProvider.TablePartitionKeys(), table)
 }
 
 func (client *Client) ServerSettings() (*Result, error) {

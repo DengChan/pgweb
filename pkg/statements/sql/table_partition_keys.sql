@@ -1,0 +1,1 @@
+SELECT pg_get_partkeydef(($1 || '.' || $2)::regclass);

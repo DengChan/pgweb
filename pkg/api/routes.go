@@ -59,6 +59,7 @@ func SetupRoutes(router *gin.Engine) {
 	dbApi.GET("/tables/:table/info", GetTableInfo)
 	dbApi.GET("/tables/:table/indexes", GetTableIndexes)
 	dbApi.GET("/tables/:table/constraints", GetTableConstraints)
+	dbApi.GET("/table_basic_info/:oid", GetTableBasicInfo)
 	dbApi.GET("/tables_stats", GetTablesStats)
 	dbApi.GET("/functions/:id", GetFunction)
 	dbApi.GET("/query", RunQuery)
