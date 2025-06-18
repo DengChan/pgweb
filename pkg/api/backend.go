@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+
+	"github.com/sosedoff/pgweb/pkg/logger"
 )
 
 // Backend represents a third party configuration source

@@ -32,6 +32,7 @@
     "files": [
       "electron/**/*",
       "static/**/*",
+      "data/**/*",
       "!electron/go-backend/**/*",
       "!electron/logs/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",

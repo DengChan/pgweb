@@ -18,6 +18,7 @@ import (
 	"github.com/sosedoff/pgweb/pkg/client"
 	"github.com/sosedoff/pgweb/pkg/command"
 	"github.com/sosedoff/pgweb/pkg/connection"
+	"github.com/sosedoff/pgweb/pkg/logger"
 	"github.com/sosedoff/pgweb/pkg/metrics"
 	"github.com/sosedoff/pgweb/pkg/queries"
 	"github.com/sosedoff/pgweb/pkg/shared"
@@ -222,6 +223,7 @@ func ConnectWithURL(c *gin.Context) (*client.Client, error) {
 		dataSourceType = "postgres" // 默认为PostgreSQL
 	}
 	cl.SetDataSourceType(dataSourceType)
+	logger.Debug("ConnectWithURL dataSourceType", dataSourceType)
 
 	return cl, nil
 }

@@ -10,27 +10,20 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/sosedoff/pgweb/pkg/command"
+	"github.com/sosedoff/pgweb/pkg/logger"
 )
 
 var (
-	logger *logrus.Logger
-
 	reConnectToken = regexp.MustCompile("/connect/(.*)")
 )
 
-func init() {
-	if logger == nil {
-		logger = logrus.New()
+func RequestLogger(loggerInstance *logrus.Logger) gin.HandlerFunc {
+	// 如果传入nil，使用全局logger
+	if loggerInstance == nil {
+		loggerInstance = logger.Logger()
 	}
-}
 
-// TODO: Move this into server struct when it's ready
-func SetLogger(l *logrus.Logger) {
-	logger = l
-}
-
-func RequestLogger(logger *logrus.Logger) gin.HandlerFunc {
-	debug := logger.Level > logrus.InfoLevel
+	debug := loggerInstance.Level > logrus.InfoLevel
 	logForwardedUser := command.Opts.LogForwardedUser
 
 	return func(c *gin.Context) {
@@ -88,16 +81,15 @@ func RequestLogger(logger *logrus.Logger) gin.HandlerFunc {
 			}
 		}
 
-		entry := logger.WithFields(fields)
 		msg := "http_request"
 
 		switch {
 		case status >= http.StatusBadRequest && status < http.StatusInternalServerError:
-			entry.Warn(msg)
+			loggerInstance.WithFields(fields).Warn(msg)
 		case status >= http.StatusInternalServerError:
-			entry.Error(msg)
+			loggerInstance.WithFields(fields).Error(msg)
 		default:
-			entry.Info(msg)
+			loggerInstance.WithFields(fields).Info(msg)
 		}
 	}
 }

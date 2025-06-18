@@ -19,13 +19,13 @@ import (
 	"github.com/sosedoff/pgweb/pkg/client"
 	"github.com/sosedoff/pgweb/pkg/command"
 	"github.com/sosedoff/pgweb/pkg/connection"
+	"github.com/sosedoff/pgweb/pkg/logger"
 	"github.com/sosedoff/pgweb/pkg/metrics"
 	"github.com/sosedoff/pgweb/pkg/queries"
 	"github.com/sosedoff/pgweb/pkg/util"
 )
 
 var (
-	logger  *logrus.Logger
 	options command.Options
 
 	readonlyWarning = `
@@ -35,10 +35,6 @@ This mode is designed for environments where users could potentially delete or c
 For proper read-only access please follow PostgreSQL role management documentation.
 --------------------------------------------------------------------------------`
 )
-
-func init() {
-	logger = logrus.New()
-}
 
 func exitWithMessage(message string) {
 	fmt.Println("Error:", message)
@@ -168,24 +164,20 @@ func configureLocalQueryStore() {
 }
 
 func configureLogger(opts command.Options) error {
+	// 配置全局Logger的日志级别
+	globalLogger := logger.Logger()
+
 	if options.Debug {
-		logger.SetLevel(logrus.DebugLevel)
+		globalLogger.SetLevel(logrus.DebugLevel)
 	} else {
 		lvl, err := logrus.ParseLevel(opts.LogLevel)
 		if err != nil {
 			return err
 		}
-		logger.SetLevel(lvl)
+		globalLogger.SetLevel(lvl)
 	}
 
-	switch options.LogFormat {
-	case "text":
-		logger.SetFormatter(&logrus.TextFormatter{})
-	case "json":
-		logger.SetFormatter(&logrus.JSONFormatter{})
-	default:
-		return fmt.Errorf("invalid logger format: %v", options.LogFormat)
-	}
+	globalLogger.Info("Logger configuration completed")
 
 	return nil
 }
@@ -196,7 +188,7 @@ func printVersion() {
 
 func startServer() {
 	router := gin.New()
-	router.Use(api.RequestLogger(logger))
+	router.Use(api.RequestLogger(logger.Logger()))
 	router.Use(gin.Recovery())
 
 	// Enable HTTP basic authentication only if both user and password are set
@@ -205,7 +197,6 @@ func startServer() {
 		router.Use(gin.BasicAuth(auth))
 	}
 
-	api.SetLogger(logger)
 	api.SetupRoutes(router)
 	api.SetupMetrics(router)
 
@@ -230,7 +221,7 @@ func startMetricsServer() {
 		return
 	}
 
-	err := metrics.StartServer(logger, options.MetricsPath, options.MetricsAddr)
+	err := metrics.StartServer(logger.Logger(), options.MetricsPath, options.MetricsAddr)
 	if err != nil {
 		logger.WithError(err).Fatal("unable to start prometheus metrics server")
 	}
@@ -313,7 +304,7 @@ func Run() {
 
 	// Start session cleanup worker
 	if options.Sessions {
-		api.DbSessions = api.NewSessionManager(logger)
+		api.DbSessions = api.NewSessionManager(logger.Logger())
 
 		if !command.Opts.DisableConnectionIdleTimeout {
 			api.DbSessions.SetIdleTimeout(time.Minute * time.Duration(command.Opts.ConnectionIdleTimeout))
