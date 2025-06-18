@@ -4,4 +4,4 @@ user = "oushutest_u_100000001002"
 database = "postgres"
 ssl_mode = "disable"
 data_source_type = "panweidb-ap"
-last_used = 2025-06-18T12:49:55.3187123+08:00
+last_used = 2025-06-18T14:30:00.02625+08:00
