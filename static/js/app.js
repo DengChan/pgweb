@@ -366,10 +366,10 @@ function performTableAction(table, action, el) {
       var db = $("#current_database").text();
       var filename = db + "." + table + "." + format;
       var query = "SELECT * FROM " + table;
-      openInNewWindow("api/db/query", { "format": format, "filename": filename, "query": query });
+      downloadFile("api/db/query", { "format": format, "filename": filename, "query": query });
       break;
     case "dump":
-      openInNewWindow("api/db/export", { "table": table });
+      downloadFile("api/db/export", { "table": table });
       break;
     case "copy":
       copyToClipboard(table.split('.')[1]);
@@ -402,7 +402,7 @@ function performViewAction(view, action, el) {
       var db = $("#current_database").text();
       var filename = db + "." + view + "." + format;
       var query = "SELECT * FROM " + view;
-      openInNewWindow("api/db/query", { "format": format, "filename": filename, "query": query });
+      downloadFile("api/db/query", { "format": format, "filename": filename, "query": query });
       break;
     case "copy":
       copyToClipboard(view.split('.')[1]);
@@ -709,7 +709,7 @@ function showDatabaseStats() {
 }
 
 function downloadDatabaseStats() {
-  openInNewWindow("api/db/tables_stats", { format: "csv", export: "true" });
+  downloadFile("api/db/tables_stats", { format: "csv", export: "true" });
 }
 
 function showServerSettings() {
@@ -976,9 +976,24 @@ function runAnalyze() {
 }
 
 function generateURL(path, params) {
-  var url = new URL(window.location.href.split("#")[0]);
-
-  url.pathname += path;
+  var baseUrl;
+  
+  // 在 Electron 环境中，window.location.href 是 file:// 协议
+  // 我们需要使用 API 服务器的地址
+  if (window.location.protocol === 'file:') {
+    baseUrl = CONFIG.API_BASE_URL;
+  } else {
+    baseUrl = window.location.href.split("#")[0];
+  }
+  
+  var url = new URL(baseUrl);
+  
+  // 确保路径以 / 开头
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  
+  url.pathname = path;
   for (key in params) {
     url.searchParams.append(key, params[key]);
   }
@@ -995,6 +1010,25 @@ function openInNewWindow(path, params) {
   win.focus();
 }
 
+function downloadFile(path, params) {
+  var url = generateURL(path, params);
+  
+  // 创建一个隐藏的下载链接
+  var link = document.createElement('a');
+  link.href = url;
+  link.download = ''; // 让浏览器决定文件名
+  link.style.display = 'none';
+  
+  // 添加到页面并触发点击
+  document.body.appendChild(link);
+  link.click();
+  
+  // 清理：移除链接元素
+  setTimeout(function() {
+    document.body.removeChild(link);
+  }, 100);
+}
+
 function exportTo(format) {
   var query = getEditorSelection();
   if (query.length == 0) {
@@ -1003,10 +1037,11 @@ function exportTo(format) {
 
   setCurrentTab("table_query");
 
-  openInNewWindow("api/db/query", {
+  // 使用直接下载方式，避免弹窗停留
+  downloadFile("api/db/query", {
     "format": format,
     "query": encodeQuery(query)
-  })
+  });
 }
 
 // Fetch all unique values for the selected column in the table
@@ -1358,7 +1393,7 @@ function bindCurrentDatabaseMenu() {
           showServerSettings();
           break;
         case "export":
-          openInNewWindow("api/db/export");
+          downloadFile("api/db/export", {});
           break;
       }
     }
