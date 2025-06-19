@@ -11,6 +11,8 @@ WITH all_objects AS (
       WHEN 'S' THEN 'sequence'
       WHEN 's' THEN 'special'
       WHEN 'f' THEN 'foreign_table'
+      WHEN 'p' THEN 'table' -- 分区表
+    ELSE 'unknown'
     END AS type,
     pg_catalog.pg_get_userbyid(c.relowner) AS owner,
     pg_catalog.obj_description(c.oid) AS comment
@@ -19,7 +21,7 @@ WITH all_objects AS (
   LEFT JOIN
     pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   WHERE
-    c.relkind IN ('r','v','m','S','s','')
+    c.relkind IN ('r','v','m','S','s','','p')
     AND n.nspname !~ '^pg_(toast|temp)'
     AND n.nspname NOT IN ('information_schema', 'pg_catalog')
     AND has_schema_privilege(n.nspname, 'USAGE')

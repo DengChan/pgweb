@@ -177,10 +177,19 @@ func ObjectsFromResult(res *Result) map[string]*Objects {
 	objects := map[string]*Objects{}
 
 	for _, row := range res.Rows {
-		oid := row[0].(string)
-		schema := row[1].(string)
-		name := row[2].(string)
-		objectType := row[3].(string)
+		var oid, schema, name, objectType string
+		if row[0] != nil {
+			oid = row[0].(string)
+		}
+		if row[1] != nil {
+			schema = row[1].(string)
+		}
+		if row[2] != nil {
+			name = row[2].(string)
+		}
+		if row[3] != nil {
+			objectType = row[3].(string)
+		}
 
 		if objects[schema] == nil {
 			objects[schema] = &Objects{

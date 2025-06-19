@@ -586,6 +586,66 @@ function showTableConstraints() {
   });
 }
 
+function showTableBasicInfo() {
+  var currentObj = getCurrentObject();
+  var name = currentObj.name;
+
+  if (name.length == 0) {
+    alert("Please select a table!");
+    return;
+  }
+
+  if (currentObj.type != "table") {
+    alert("Basic info is only available for tables!");
+    return;
+  }
+
+  // 获取当前选中表的OID
+  var selectedElement = $("#objects li.active");
+  var oid = selectedElement.data("oid");
+  
+  if (!oid) {
+    alert("Unable to get table OID for basic info!");
+    return;
+  }
+
+  getTableBasicInfo(oid, function(data) {
+    if (data.error) {
+      alert("Error loading basic info: " + data.error);
+      return;
+    }
+
+    setCurrentTab("table_basic_info");
+    
+    // 构建基本信息的HTML
+    var basicInfoHtml = `
+      <div class="table-basic-info">
+        <h3>Table Basic Information</h3>
+        <table class="table table-bordered">
+          <tbody>
+            <tr><td><strong>Table Name:</strong></td><td>${escapeHtml(data.name || '')}</td></tr>
+            <tr><td><strong>Schema:</strong></td><td>${escapeHtml(data.schema || '')}</td></tr>
+            <tr><td><strong>Owner:</strong></td><td>${escapeHtml(data.owner || '')}</td></tr>
+            <tr><td><strong>Table Type:</strong></td><td>${escapeHtml(data.table_type || '')}</td></tr>
+            <tr><td><strong>Table Space:</strong></td><td>${escapeHtml(data.table_space || 'Default')}</td></tr>
+            <tr><td><strong>Comment:</strong></td><td>${escapeHtml(data.comment || 'No comment')}</td></tr>
+            <tr><td><strong>Partition Keys:</strong></td><td>${escapeHtml(data.partition_keys || 'None')}</td></tr>
+            <tr><td><strong>Distribute Keys:</strong></td><td>${escapeHtml(data.distribute_keys || 'None')}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // 隐藏输入区域，显示全屏结果
+    $("#input").hide();
+    $("#body").prop("class", "full");
+    
+    // 隐藏默认的表格，显示自定义的内容
+    $("#results").hide();
+    $("#results_view").html(basicInfoHtml).show();
+  });
+}
+
 function showTableInfo() {
   var name = getCurrentObject().name;
 
@@ -1632,6 +1692,7 @@ $(document).ready(function() {
   bindInputResizeEvents();
   bindContentModalEvents();
 
+  $("#table_basic_info").on("click",   function() { showTableBasicInfo();   });
   $("#table_content").on("click",     function() { showTableContent();     });
   $("#table_structure").on("click",   function() { showTableStructure();   });
   $("#table_indexes").on("click",     function() { showTableIndexes();     });
@@ -1693,25 +1754,6 @@ $(document).ready(function() {
     $(".current-page").data("page", 1);
     $(".filters select, .filters input").val("");
 
-    // 测试调用TableBasicInfo API（仅对表类型）
-    if (currentObject.type == "table") {
-      var oid = $(this).data("oid");
-      if (oid) {
-        console.log("Calling TableBasicInfo API for table:", currentObject.name, "OID:", oid);
-        getTableBasicInfo(oid, function(data) {
-          if (data.error) {
-            console.error("TableBasicInfo API Error:", data.error);
-            alert("Error calling TableBasicInfo API: " + data.error);
-          } else {
-            console.log("TableBasicInfo API Response:", data);
-            alert("TableBasicInfo API called successfully! Check console for details.\n\nTable: " + data.name + "\nType: " + data.table_type + "\nOwner: " + data.owner);
-          }
-        });
-      } else {
-        console.warn("No OID found for table:", currentObject.name);
-      }
-    }
-
     if (currentObject.type == "function") {
       sessionStorage.setItem("tab", "table_structure");
     } else {
@@ -1719,6 +1761,9 @@ $(document).ready(function() {
     }
 
     switch(sessionStorage.getItem("tab")) {
+      case "table_basic_info":
+        showTableBasicInfo();
+        break;
       case "table_content":
         showTableContent();
         break;
@@ -1732,7 +1777,12 @@ $(document).ready(function() {
         showTableIndexes();
         break;
       default:
-        showTableContent();
+        // 默认跳转到Basic Info（对于表类型），其他类型跳转到表内容
+        if (currentObject.type == "table") {
+          showTableBasicInfo();
+        } else {
+          showTableContent();
+        }
     }
   });
 

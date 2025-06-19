@@ -914,3 +914,45 @@
 .ace_autocomplete .ace_active-line {
   background: #eee !important;
 }
+
+/* -------------------------------------------------------------------------- */
+/* Basic Info Styles */
+/* -------------------------------------------------------------------------- */
+
+.table-basic-info {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.table-basic-info h3 {
+  color: #333;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #79589f;
+}
+
+.table-basic-info table {
+  margin-bottom: 0;
+}
+
+.table-basic-info table td:first-child {
+  background-color: #f8f9fa;
+  font-weight: 500;
+  width: 200px;
+  vertical-align: middle;
+}
+
+.table-basic-info table td:last-child {
+  background-color: #fff;
+  word-break: break-word;
+  vertical-align: middle;
+}
+
+.table-basic-info table tr:hover td {
+  background-color: #f1f3f4;
+}
+
+.table-basic-info table tr:hover td:first-child {
+  background-color: #e9ecef;
+}

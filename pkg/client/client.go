@@ -18,6 +18,7 @@ import (
 	"github.com/sosedoff/pgweb/pkg/command"
 	"github.com/sosedoff/pgweb/pkg/connection"
 	"github.com/sosedoff/pgweb/pkg/history"
+	"github.com/sosedoff/pgweb/pkg/logger"
 	"github.com/sosedoff/pgweb/pkg/shared"
 	"github.com/sosedoff/pgweb/pkg/statements"
 	"github.com/sosedoff/pgweb/pkg/structs/meta"
@@ -197,11 +198,11 @@ func (client *Client) setServerVersion() {
 	}
 
 	version := res.Rows[0][0].(string)
-	match, serverType, serverVersion := detectServerTypeAndVersion(version)
+	match, serverType, _ := detectServerTypeAndVersion(version)
 	if match {
 		client.serverType = serverType
-		client.serverVersion = serverVersion
 	}
+	client.serverVersion = getMajorMinorVersionString(client)
 
 	// 更新SQL提供器
 	client.updateSQLProvider()
@@ -259,6 +260,7 @@ func (client *Client) TableBasicInfo(oid int) (*meta.TableBasicInfo, error) {
 	// 调用TableBasicInfo方法
 	basicInfo, err := metaQueryer.TableBasicInfo(client.db, oid)
 	if err != nil {
+		logger.Error("pg query table basic info error: ", err.Error())
 		return nil, err
 	}
 

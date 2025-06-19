@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/sosedoff/pgweb/pkg/logger"
 	"github.com/sosedoff/pgweb/pkg/statements"
 	"github.com/sosedoff/pgweb/pkg/structs/meta"
 )
@@ -59,16 +60,15 @@ func (q *PGDefaultMetaQueryer) TableBasicInfo(db *sqlx.DB, oid int) (meta.TableB
 
 	// 获取分区键信息，使用查询到的schema
 	partitionKeysSQL := q.sqlProvider.TablePartitionKeys()
-	var partitionKeys *string
-	row = db.QueryRow(partitionKeysSQL, basicInfo.Schema, basicInfo.Table)
+	var partitionKeys sql.NullString
+	row = db.QueryRow(partitionKeysSQL, oid)
 	err = row.Scan(&partitionKeys)
 	if err != nil {
+		logger.Error("pg query table partition keys error: ", err.Error())
 		// 分区键可能为空，这是正常的
 		basicInfo.PartitionKeys = ""
-	} else if partitionKeys != nil {
-		basicInfo.PartitionKeys = strings.TrimSpace(*partitionKeys)
 	} else {
-		basicInfo.PartitionKeys = ""
+		basicInfo.PartitionKeys = strings.TrimSpace(partitionKeys.String)
 	}
 
 	// DistributeKeys 留空，因为用户指定不需要获取

@@ -11,6 +11,8 @@ WITH all_objects AS (
       WHEN 'S' THEN 'sequence'
       WHEN 's' THEN 'special'
       WHEN 'f' THEN 'foreign_table'
+      WHEN 'p' THEN 'table' -- 分区表
+      ELSE 'unknown'
     END AS type,
     pg_catalog.pg_get_userbyid(c.relowner) AS owner,
     pg_catalog.obj_description(c.oid) AS comment
